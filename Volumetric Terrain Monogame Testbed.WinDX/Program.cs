@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Volumetric_Terrain_Monogame_Testbed.WinDX
+namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 {
     public static class Program
     {

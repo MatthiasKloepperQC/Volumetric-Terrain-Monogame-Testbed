@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-namespace Volumetric_Terrain_Monogame_Testbed.WinDX
+namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 {
     public class Game1 : Game
     {

@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <!-- Include definitions from fx.xml, which defines the FXShader item. -->
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)fx.xml" />
+    <!-- Hook up DXCShader items to be built by the DXC target. -->
+    <AvailableItemName Include="MonoGameShaderCompile">
+    </AvailableItemName>
+  </ItemGroup>
+
+  <Target
+    Name="Compile MonoGame Shader for DirectX"
+    Condition="'@(MonoGameShaderCompile)' != ''"
+    BeforeTargets="PrepareForBuild"
+    Inputs="%(MonoGameShaderCompile.Identity)"
+    Outputs="%(MonoGameShaderCompile.RelativeDir)..\ByteCode\%(MonoGameShaderCompile.Filename).dx11.mgfxo">
+
+    <!-- Ensure there is a manifest for the project. -->
+    <Exec
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      Command="dotnet new tool-manifest"
+      ContinueOnError="true" />
+
+    <!-- Install latest version of dotnet-mgfxc. -->
+    <PropertyGroup>
+      <MgfxcRequiredVersion>*</MgfxcRequiredVersion>
+      <MgfxcRequiredVersion>3.8.0.1180-develop</MgfxcRequiredVersion>
+    </PropertyGroup>
+    <Exec
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      Command="dotnet tool install dotnet-mgfxc --version $(MgfxcRequiredVersion)"
+      ContinueOnError="false" />
+
+    <Message Importance="High" Text="Compiling MonoGame Shader %(MonoGameShaderCompile.Identity) to bytecode %(MonoGameShaderCompile.RelativeDir)..\ByteCode\%(MonoGameShaderCompile.Filename).dx11.mgfxo" />
+    <Exec
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      Command="dotnet mgfxc %(MonoGameShaderCompile.Identity) %(MonoGameShaderCompile.RelativeDir)..\\ByteCode\\%(MonoGameShaderCompile.Filename).dx11.mgfxo /Profile:DirectX_11"
+      ContinueOnError="false" />
+    
+    <ItemGroup>
+      <None Remove="Effects\ByteCode\%(MonoGameShaderCompile.Filename).dx11.mgfxo" />
+      <EmbeddedResource Include="Effects\ByteCode\%(MonoGameShaderCompile.Filename).dx11.mgfxo" />
+    </ItemGroup>
+    <Message Importance="High" Text="These files will now be compiled as embedded resources: @(EmbeddedResource)" />
+  </Target>
+</Project>

@@ -1,4 +1,5 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <Import Project="Effects\.targets\fx.targets" />
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -13,6 +14,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Content\obj\**" />
+    <EmbeddedResource Remove="Content\obj\**" />
+    <None Remove="Content\obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Effects\SourceCode\BattletechEffect.fx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Effects\.targets\fx.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <TrimmerRootAssembly Include="Microsoft.Xna.Framework.Content.ContentTypeReader" Visible="false" />
   </ItemGroup>
 
@@ -21,8 +36,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MonoGame.Content.Builder" Version="3.7.0.9" />
-    <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.0.1176-develop" />
+    <MonoGameShaderCompile Include="Effects\SourceCode\BattletechEffect.fx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.0.1185-develop" />
+    <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.0.1185-develop" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Effects\.targets\fx.targets" />
   </ItemGroup>
 
 </Project>
