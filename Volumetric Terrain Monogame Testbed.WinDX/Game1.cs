@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using BattletechUniverse.Effects;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -12,6 +13,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
+            this._graphics.PreparingDeviceSettings += _graphics_PreparingDeviceSettings;
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
         }
@@ -19,8 +21,13 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-
+            BattletechEffect bte = new BattletechEffect(this.GraphicsDevice);
             base.Initialize();
+        }
+
+        private void _graphics_PreparingDeviceSettings(object sender, PreparingDeviceSettingsEventArgs e)
+        {
+            e.GraphicsDeviceInformation.GraphicsProfile = GraphicsProfile.HiDef;
         }
 
         protected override void LoadContent()

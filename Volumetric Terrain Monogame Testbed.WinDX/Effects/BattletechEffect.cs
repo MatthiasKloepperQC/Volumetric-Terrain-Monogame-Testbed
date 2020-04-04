@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using SolConsulting.MonoGame.Testbed.VolumetricTerrain.Effects;
+using SolConsulting.MonoGame.Effects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +17,7 @@ namespace BattletechUniverse.Effects
         WorldViewProjectionMatrix = 2
     }
 
-    public class BattletechEffect /*: Effect*/
+    class BattletechEffect : CustomEffectBase
     {/*
         #region Members
         private EffectDirtyFlags dirtyFlags;
@@ -30,15 +30,17 @@ namespace BattletechUniverse.Effects
         private Matrix viewMatrix = Matrix.Identity;
         private Matrix worldMatrix = Matrix.Identity;
         private Matrix worldViewProjectionMatrix = Matrix.Identity;
-        #endregion
+        #endregion*/
 
         #region Constructor
-        public BattletechEffect(GraphicsDevice graphicsDevice) : base(graphicsDevice, EffectHelper.GetEffectHelper(graphicsDevice).GetEffectByteCode(typeof(BattletechEffect)))
+        internal BattletechEffect(GraphicsDevice graphicsDevice) : base(graphicsDevice, typeof(BattletechEffect))
         {
+            /*
             this.Initialize();
+            */
         }
         #endregion
-
+        /*
         #region
         public Matrix ModelRotationMatrix
         {
