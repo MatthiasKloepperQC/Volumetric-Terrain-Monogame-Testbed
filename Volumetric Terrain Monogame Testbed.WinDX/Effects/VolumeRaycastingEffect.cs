@@ -17,7 +17,7 @@ namespace BattletechUniverse.Effects
         WorldViewProjectionMatrix = 2
     }
 
-    class BattletechEffect : CustomEffectBase
+    class VolumeRaycastingEffect : CustomEffectBase
     {/*
         #region Members
         private EffectDirtyFlags dirtyFlags;
@@ -33,7 +33,7 @@ namespace BattletechUniverse.Effects
         #endregion*/
 
         #region Constructor
-        internal BattletechEffect(GraphicsDevice graphicsDevice) : base(graphicsDevice, typeof(BattletechEffect))
+        internal VolumeRaycastingEffect(GraphicsDevice graphicsDevice) : base(graphicsDevice, typeof(VolumeRaycastingEffect))
         {
             /*
             this.Initialize();

@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Effects\SourceCode\BattletechEffect.fx" />
+    <None Remove="Effects\SourceCode\VolumeRaycastingEffect.fx" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <MonoGameShaderCompile Include="Effects\SourceCode\BattletechEffect.fx" />
+    <MonoGameShaderCompile Include="Effects\SourceCode\VolumeRaycastingEffect.fx" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +46,10 @@
 
   <ItemGroup>
     <None Include="Effects\.targets\fx.targets" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Effects\ByteCode\" />
   </ItemGroup>
 
 </Project>

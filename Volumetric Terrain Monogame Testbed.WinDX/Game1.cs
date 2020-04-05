@@ -21,7 +21,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            BattletechEffect bte = new BattletechEffect(this.GraphicsDevice);
+            VolumeRaycastingEffect bte = new VolumeRaycastingEffect(this.GraphicsDevice);
             base.Initialize();
         }
 

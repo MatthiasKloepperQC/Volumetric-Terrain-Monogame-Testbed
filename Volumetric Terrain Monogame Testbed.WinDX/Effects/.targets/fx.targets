@@ -31,16 +31,28 @@
       Command="dotnet tool install dotnet-mgfxc --version $(MgfxcRequiredVersion)"
       ContinueOnError="false" />
 
-    <Message Importance="High" Text="Compiling MonoGame Shader %(MonoGameShaderCompile.Identity) to bytecode %(MonoGameShaderCompile.RelativeDir)..\ByteCode\%(MonoGameShaderCompile.Filename).dx11.mgfxo" />
+    <Message Importance="High" Text="Compiling MonoGame Shader %(MonoGameShaderCompile.Identity) to HLSL bytecode %(MonoGameShaderCompile.RelativeDir)..\ByteCode\%(MonoGameShaderCompile.Filename).dx11.mgfxo" />
     <Exec
       WorkingDirectory="$(MSBuildProjectDirectory)"
       Command="dotnet mgfxc %(MonoGameShaderCompile.Identity) %(MonoGameShaderCompile.RelativeDir)..\\ByteCode\\%(MonoGameShaderCompile.Filename).dx11.mgfxo /Profile:DirectX_11"
       ContinueOnError="false" />
-    
+
     <ItemGroup>
       <None Remove="Effects\ByteCode\%(MonoGameShaderCompile.Filename).dx11.mgfxo" />
       <EmbeddedResource Include="Effects\ByteCode\%(MonoGameShaderCompile.Filename).dx11.mgfxo" />
     </ItemGroup>
+
+    <Message Importance="High" Text="Compiling MonoGame Shader %(MonoGameShaderCompile.Identity) to GLSL bytecode %(MonoGameShaderCompile.RelativeDir)..\ByteCode\%(MonoGameShaderCompile.Filename).dx11.mgfxo" />
+    <Exec
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      Command="dotnet mgfxc %(MonoGameShaderCompile.Identity) %(MonoGameShaderCompile.RelativeDir)..\\ByteCode\\%(MonoGameShaderCompile.Filename).ogl.mgfxo /Profile:OpenGL"
+      ContinueOnError="false" />
+
+    <ItemGroup>
+      <None Remove="Effects\ByteCode\%(MonoGameShaderCompile.Filename).ogl.mgfxo" />
+      <EmbeddedResource Include="Effects\ByteCode\%(MonoGameShaderCompile.Filename).ogl.mgfxo" />
+    </ItemGroup>
+    
     <Message Importance="High" Text="These files will now be compiled as embedded resources: @(EmbeddedResource)" />
   </Target>
 </Project>

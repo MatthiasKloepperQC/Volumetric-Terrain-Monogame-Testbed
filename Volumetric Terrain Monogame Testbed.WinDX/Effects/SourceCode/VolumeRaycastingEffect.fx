@@ -1,131 +1,135 @@
 ﻿#if OPENGL
+	#define SV_POSITION POSITION
 	#define VS_SHADERMODEL vs_3_0
 	#define PS_SHADERMODEL ps_3_0
 #else
+	//#define VS_SHADERMODEL vs_4_0_level_9_1
+	//#define PS_SHADERMODEL ps_4_0_level_9_1
 	#define VS_SHADERMODEL vs_5_0
 	#define PS_SHADERMODEL ps_5_0
 #endif
 
-
 // Strukturen für den Input der Vertex-Shader.
-struct VS_Input_BoundingBox
+struct Input_PositionColor
 {
 	float4 Position : POSITION0;
+	float4 Color : COLOR0;
+};
+
+struct Input_PositionSingleTextureCoordinates
+{
+	float4 Position : POSITION0;
+	float2 TextureCoordinates : TEXCOORD0;
 };
 
 
 // Strukturen für den Output der Vertex-Shader bzw. den Input der Pixel-Shader.
-struct VS_Output_BoundingBox
+struct VertexToPixel_PositionColor
 {
-	// Vorsicht: SV_POSITION gibt die ScreenSpace Koordinaten in Pixel an (z.B. [0;1920[ fürden x-Wert).
 	float4 Position : SV_POSITION;
-
-	// Zusätzlich soll die Position im World Space transportiert werden.
-	// Dafür wird eine Semantic des Typs float4 benötigt.
-	float4 PositionWorld : COLOR;
+	float4 Color : COLOR0;
 };
 
-// Die aktuelle Position der Camera im WorldSpace.
-extern uniform float4 CameraPositionWorldSpace;
+struct VertexToPixel_PositionSingleTextureCoordinates
+{
+	float4 Position : SV_POSITION;
+	float2 TextureCoordinates : TEXCOORD0;
+};
+
+
+// Allgemeine Variablen
+Texture2D FirstTexture;
+sampler FirstTextureSampler = sampler_state
+{
+	MagFilter = ANISOTROPIC;
+	MaxLOD = 0;
+	MinFilter = ANISOTROPIC;
+	//MinLOD = 0;
+	MipFilter = ANISOTROPIC;
+	MipLODBias = 0;
+	AddressU = wrap;
+	AddressV = mirror;
+};
+sampler TestTextureSampler : register(s0);
+Texture2D texArray[16];
+
+// Die können aus der Anwendung heraus gesetzt werden.
+// Die WorldMatrix. Wird vor allem zur Transformation der Normalen benötigt.
+matrix WorldMatrix;
+
+// Die kombinierten World-, View- und Projection-Matritzen zur Positionierung der Zeichnung an der richtigen Stelle auf dem Bildschirm.
+matrix WorldViewProjectionMatrix;
+
+
+// Allgemeine Funktionen
+// Transformiert eine Normale anhand der World-Matrix aus dem Model- in den World-Space.
+// Da die Normalen als Richtungsvektor (.w 0 = 0) markiert sind sollte die Transformation
+// die Transponierungs-Komponente der Matrix nicht verwenden.
+float4 TransformNormalToWorldspace(in float4 normal)
+{	
+	return mul(normal, WorldMatrix);
+}
+
+// Überführt die Positionen eines Eckpunkts anhand der WorldViewProjectionMatrix aus dem Model-Space in den View-Space.
+float4 TransformPositionToScreenSpace(in float4 position)
+{
+	return mul(position, WorldViewProjectionMatrix);
+}
+
 
 // Vertex-Shader Funktionen
-VS_Output VS_ForwardPosition(in VS_Input_BoundingBox input)
+VertexToPixel_PositionColor VS_TransformPosition_TransportColor(in Input_PositionColor input)
 {
-	// TODO: Bounding Box muss transformiert werden per WorldViewProjection MAxtrix.
-	VS_Output output;
-	output.Position = input.Position;
-	output.PositionScreen = input.Position;
+	VertexToPixel_PositionColor output = (VertexToPixel_PositionColor)0;
+
+	output.Position = TransformPositionToScreenSpace(input.Position);
+	output.Color = input.Color;
+	return output;
+}
+
+VertexToPixel_PositionSingleTextureCoordinates VS_TransformPosition_TransportSingleTextureCoordinates(in Input_PositionSingleTextureCoordinates input)
+{
+	VertexToPixel_PositionSingleTextureCoordinates output = (VertexToPixel_PositionSingleTextureCoordinates)0;
+
+	output.Position = TransformPositionToScreenSpace(input.Position);
+	output.TextureCoordinates = input.TextureCoordinates;
+	return output;
+}
+
+
+// Pixel-Shader Funktionen
+float4 PS_OutputVertexColor(VertexToPixel_PositionColor input) : COLOR
+{
+	float4 output = (float4)0;
+	output = input.Color;
 
 	return output;
 }
 
-// Pixel-Shader Funktionen
-float4 PS_OutputColor(in VS_Output input) : COLOR
+float4 PS_OutputSingleTextureColor(VertexToPixel_PositionSingleTextureCoordinates input) : COLOR
 {
-	// Die übergebene ScreenSpace-Position in den WorldSpace transformieren.
-	float4 positionWorldSpace = mul(input.PositionScreen, InvertedViewProjectionMatrix);
-	positionWorldSpace = positionWorldSpace / positionWorldSpace.w;
+	float4 output = (float4)0;
+	output = FirstTexture.Sample(FirstTextureSampler, input.TextureCoordinates);
 
-	// Den Richtungsvektor von der Kamera-Position zur berechneten WorldSpace-Position.
-	float4 rayDirection = normalize(positionWorldSpace - CameraPositionWorldSpace);
-
-	float4 outputColor = 0;
-
-	float distanceToSurface = GetShortestDistanceToSurface(CameraPositionWorldSpace, rayDirection);
-
-	DirectionalLight sun;
-	sun.Direction = normalize(float3(-0.8, 0.4, -0.3));
-	sun.Direction = normalize(float3(0.2, 0.75, -1.0));
-	sun.Intensity = 1.25;
-	sun.Color = float3(1.0, 0.8, 0.6);
-
-	if (distanceToSurface >= MaximumDistance)
-	{
-		// sky
-		float3 col = float3(0.2, 0.5, 0.85)*1.1 - rayDirection.y*rayDirection.y*0.5;
-		col = lerp(col, 0.85*float3(0.7, 0.75, 0.85), pow(1.0 - max(rayDirection.y, 0.0), 4.0));
-
-		// sun
-		float3 light1 = sun.Direction; // Lichtrichtung? Kann eigentlich nicht sein. Eher die Richtung in der die Sonne sich befindet.
-		float sundot = clamp(dot((float3)rayDirection, light1), 0.0, 1.0);
-		col += 0.25*float3(1.0, 0.7, 0.4)*pow(sundot, 5.0);
-		col += 0.25*float3(1.0, 0.8, 0.6)*pow(sundot, 64.0);  // Sundot <= 1, daher nimmt die Farbintensität mit steigendem Exponenten ab und wirkt lokal begrenzter.
-		col += 0.2*float3(1.0, 0.8, 0.6)*pow(sundot, 512.0);
-
-		return float4(col.x, col.y, col.z, 1.0);
-	}
-	if (distanceToSurface == MaximumDistance)
-	{
-		// Keine Oberfläche in Sichtweite.
-		outputColor = float4(0.0, 0.5333333, 1.0, 1.0);
-		return float4(0.0, 0.5333333, 1.0, 1.0);
-	}
-	if (distanceToSurface == MaximumDistance * 2)
-	{
-		// Maximale Anzahl Schritte aufgebraucht.
-		// Für den Moment rot zurückgeben.
-		outputColor = float4(1.0, 0.0, 0.0, 1.0);
-		return float4(1.0, 0.0, 0.0, 1.0);
-	}
-	if (distanceToSurface == MaximumDistance * 3)
-	{
-		// Maximale Anzahl Schritte aufgebraucht.
-		// Für den Moment rot zurückgeben.
-		outputColor = float4(1.0, 0.0, 0.0, 1.0);
-		return float4(0.0, 1.0, 0.0, 1.0);
-	}
-
-	// Oberfläche gefunden.
-	// Den Kontaktpunkt mit der Oberfläche bestimmen.
-	float3 pointOfContactWorldSpace = (float3)(CameraPositionWorldSpace + distanceToSurface * rayDirection);
-	float3 pointOfContactNormalWorldSpace = estimateNormal(CameraPositionWorldSpace, pointOfContactWorldSpace);
-
-	AmbientLight ambient;
-	ambient.Color = float3(1.0, 1.0, 1.0);
-	ambient.Intensity = 0.0;
-
-	DirectionalLight sky;
-	sky.Color = float3(0.2, 0.5, 0.85);
-	sky.Direction = float3(0.0, 1.0, 0.0);
-	sky.Intensity = 0.2;
-
-	DirectionalLight globalIllumination;
-	globalIllumination.Color = sun.Color;
-	globalIllumination.Direction = float3(-sun.Direction.x, 0.0, -sun.Direction.z);
-	globalIllumination.Intensity = 0.3;
-
-	float3 colorWithIllumination = Illuminate(pointOfContactWorldSpace, pointOfContactNormalWorldSpace, ambient, sun, sky, globalIllumination);
-
-	return float4(colorWithIllumination.x, colorWithIllumination.y, colorWithIllumination.z, 1.0);
+	return output;
 }
 
 
 // Techniken
-technique BoundingBox
+technique SingleTexture
 {
 	pass Pass0
 	{
-		VertexShader = compile VS_SHADERMODEL VS_ForwardPosition();
-		PixelShader = compile PS_SHADERMODEL PS_OutputColor();
+		VertexShader = compile VS_SHADERMODEL VS_TransformPosition_TransportSingleTextureCoordinates();
+		PixelShader = compile PS_SHADERMODEL PS_OutputSingleTextureColor();
+	}
+};
+
+technique VertexColors
+{
+	pass Pass0
+	{
+		VertexShader = compile VS_SHADERMODEL VS_TransformPosition_TransportColor();
+		PixelShader = compile PS_SHADERMODEL PS_OutputVertexColor();
 	}
 };
