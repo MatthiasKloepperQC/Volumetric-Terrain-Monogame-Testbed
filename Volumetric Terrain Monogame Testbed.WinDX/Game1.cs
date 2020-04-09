@@ -13,6 +13,8 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
+
+            // Hook into PreparingDeviceSettings event to change e.g. the graphics profile.
             this._graphics.PreparingDeviceSettings += _graphics_PreparingDeviceSettings;
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
@@ -27,6 +29,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 
         private void _graphics_PreparingDeviceSettings(object sender, PreparingDeviceSettingsEventArgs e)
         {
+            // Switch to highest available graphics profile.
             e.GraphicsDeviceInformation.GraphicsProfile = GraphicsProfile.HiDef;
         }
 
