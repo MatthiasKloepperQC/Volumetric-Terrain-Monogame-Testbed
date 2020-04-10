@@ -44,7 +44,10 @@ namespace SolConsulting.MonoGame.Effects
 
             foreach (EffectLanguage language in Enum.GetValues(typeof(EffectLanguage)))
             {
-                if (language == EffectLanguage.Unknown) continue;
+                if (language == EffectLanguage.Unknown)
+                {
+                    continue;
+                }
 
                 byte[] effectByteCode;
                 Effect temporaryEffect;
@@ -52,7 +55,10 @@ namespace SolConsulting.MonoGame.Effects
                 {
                     effectByteCode = CustomEffectBase.GetEmbeddedByteCode(effectType, language);
                     temporaryEffect = new Effect(graphicsDevice, effectByteCode);
-                    if (temporaryEffect == null) continue;
+                    if (temporaryEffect == null)
+                    {
+                        continue;
+                    }
                     else
                     {
                         temporaryEffect.Dispose();
@@ -89,21 +95,13 @@ namespace SolConsulting.MonoGame.Effects
             Assembly effectAssembly = effectType.Assembly;
             string resourceNamespace = effectType.Assembly.GetName().Name + ".Effects.ByteCode";
             string effectName = effectType.Name;
-            string effectLanguageExtension;
             string genericEffectByteCodeExtension = ".mgfxo";
-
-            switch (language)
+            string effectLanguageExtension = language switch
             {
-                case EffectLanguage.GLSL:
-                    effectLanguageExtension = ".ogl";
-                    break;
-                case EffectLanguage.HLSL:
-                    effectLanguageExtension = ".dx11";
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(language), "ByteCode can only be loaded for known shader languages (currently GLSL and HLSL).");
-            }
-
+                EffectLanguage.GLSL => ".ogl",
+                EffectLanguage.HLSL => ".dx11",
+                _ => throw new ArgumentOutOfRangeException(nameof(language), "ByteCode can only be loaded for known shader languages (currently GLSL and HLSL)."),
+            };
             string languageSpecificResourceName = resourceNamespace + "." + effectName + effectLanguageExtension + genericEffectByteCodeExtension;
 
             byte[] byteCode;
@@ -114,7 +112,7 @@ namespace SolConsulting.MonoGame.Effects
                     if (resourceStream == null)
                     {
                         throw new ArgumentException("Could not find embedded resource \"" + languageSpecificResourceName + "\". Exsting embedded resources are:: \"" +
-                            String.Join("\", \"", effectAssembly.GetManifestResourceNames()) + "\".");
+                            string.Join("\", \"", effectAssembly.GetManifestResourceNames()) + "\".");
                     }
 
                     resourceStream.CopyTo(resourceMemStream);
