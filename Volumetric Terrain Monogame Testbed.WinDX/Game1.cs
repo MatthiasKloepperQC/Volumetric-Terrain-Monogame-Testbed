@@ -23,6 +23,9 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         {
             // TODO: Add your initialization logic here
             VolumeRaycastingEffect vrce = new VolumeRaycastingEffect(this.GraphicsDevice);
+
+            // max Size for Texture2D on this card: 16.384 x 16.384 * 32 Bit
+            // max Size for Texture3D on this card: 512 * 512 * 512 * 32 Bit
             base.Initialize();
         }
 
@@ -34,8 +37,6 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 
         protected override void LoadContent()
         {
-            this.spriteBatch = new SpriteBatch(this.GraphicsDevice);
-
             // TODO: use this.Content to load your game content here
         }
 
