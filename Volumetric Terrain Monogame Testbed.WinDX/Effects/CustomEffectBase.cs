@@ -102,19 +102,22 @@ namespace SolConsulting.MonoGame.Effects
                 EffectLanguage.HLSL => ".dx11",
                 _ => throw new ArgumentOutOfRangeException(nameof(language), "ByteCode can only be loaded for known shader languages (currently GLSL and HLSL)."),
             };
-            string languageSpecificResourceName = resourceNamespace + "." + effectName + effectLanguageExtension + genericEffectByteCodeExtension;
+            string languageSpecificResourceName = effectName + effectLanguageExtension + genericEffectByteCodeExtension;
+
+            string[] resourceNames = effectAssembly.GetManifestResourceNames();
+            string fullResourceName = resourceNames.Where(resourceName => resourceName.EndsWith(languageSpecificResourceName)).FirstOrDefault();
+
+            if (string.IsNullOrEmpty(fullResourceName))
+            {
+                throw new ArgumentException("Could not find embedded resource \"" + languageSpecificResourceName + "\". Existing embedded resources are: \"" +
+                    string.Join("\", \"", resourceNames + "\"."));
+            }
 
             byte[] byteCode;
             using (MemoryStream resourceMemStream = new MemoryStream())
             {
-                using (Stream resourceStream = effectAssembly.GetManifestResourceStream(languageSpecificResourceName))
+                using (Stream resourceStream = effectAssembly.GetManifestResourceStream(fullResourceName))
                 {
-                    if (resourceStream == null)
-                    {
-                        throw new ArgumentException("Could not find embedded resource \"" + languageSpecificResourceName + "\". Exsting embedded resources are:: \"" +
-                            string.Join("\", \"", effectAssembly.GetManifestResourceNames()) + "\".");
-                    }
-
                     resourceStream.CopyTo(resourceMemStream);
                 }
                 byteCode = resourceMemStream.ToArray();
