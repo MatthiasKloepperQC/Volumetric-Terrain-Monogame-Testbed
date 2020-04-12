@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -38,10 +39,12 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             }
 
             this.dimension = (256, 256, 256);
+            this.ScalarValues = new double[this.dimension.x * this.dimension.y * this.dimension.z];
         }
         #endregion
 
         #region Properties
+        private double[] ScalarValues { get; }
         #endregion
     }
 }
