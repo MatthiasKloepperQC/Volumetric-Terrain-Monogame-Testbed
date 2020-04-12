@@ -8,9 +8,9 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
     /// <summary>
     /// A three dimensional density field with the discrete sample points layed out in a regular grid.
     /// </summary>
-    class DensityField
+    internal class DensityField
     {
-        #region Contants
+        #region Constants
         /// <summary>
         /// The default dimension for each axis of the <see cref="DensityField"/>.
         /// </summary>
@@ -44,7 +44,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         #endregion
 
         #region Properties
-        private double[] ScalarValues { get; }
+        internal double[] ScalarValues { get; set; }
         #endregion
     }
 }
