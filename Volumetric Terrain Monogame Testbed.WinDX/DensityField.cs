@@ -18,10 +18,6 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         #endregion
 
         #region Members
-        /// <summary>
-        /// The number of discrete sample points for each axis of the <see cref="DensityField"/>.
-        /// </summary>
-        private readonly (int x, int y, int z) dimension;
         #endregion
 
         #region Constructor
@@ -38,12 +34,17 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
                 throw new ArgumentOutOfRangeException(nameof(dimension), "Each dimension of the " + nameof(DensityField) + " has to be greater than zero.");
             }
 
-            this.dimension = (256, 256, 256);
-            this.ScalarValues = new double[this.dimension.x * this.dimension.y * this.dimension.z];
+            this.Dimension = (256, 256, 256);
+            this.ScalarValues = new double[this.Dimension.X * this.Dimension.Y * this.Dimension.Z];
         }
         #endregion
 
         #region Properties
+        /// <summary>
+        /// The number of discrete sample points for each axis of the <see cref="DensityField"/>.
+        /// </summary>
+        internal (int X, int Y, int Z) Dimension { get; private set; }
+
         internal double[] ScalarValues { get; set; }
         #endregion
     }
