@@ -26,6 +26,10 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 
             // max Size for Texture2D on this card: 16.384 x 16.384 * 32 Bit
             // max Size for Texture3D on this card: 512 * 512 * 512 * 32 Bit
+            DensityField testField = DensityField.FromSolidSphere(256);
+
+            Texture3D testTex = new Texture3D(this.GraphicsDevice, testField.Dimension.X, testField.Dimension.Y, testField.Dimension.Z, true, SurfaceFormat.Single);
+            testTex.SetData(testField.ScalarValues);
             base.Initialize();
         }
 
