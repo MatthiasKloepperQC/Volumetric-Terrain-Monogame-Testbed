@@ -15,10 +15,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         /// <summary>
         /// The default dimension for each axis of the <see cref="DensityField"/>.
         /// </summary>
-        private const int DefaultDimension=256;
-        #endregion
-
-        #region Members
+        private const int DefaultDimension = 256;
         #endregion
 
         #region Constructor
@@ -50,7 +47,19 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         #endregion
 
         #region Methods
-        internal static DensityField FromSolidSphere(int dimension)
+        internal static DensityField EmptyVolume(int dimension)
+        {
+            DensityField densityField = new DensityField(dimension);
+
+            for (int index = 0; index < densityField.ScalarValues.Length; index++)
+            {
+                densityField.ScalarValues[index] = 0.0f;
+            }
+
+            return densityField;
+        }
+
+internal static DensityField FromSolidSphere(int dimension)
         {
             DensityField densityField = new DensityField(dimension);
 
@@ -75,9 +84,21 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
                     {
                         int scalarValuesIndex = u + (v * densityField.Dimension.X) + (w * densityField.Dimension.X * densityField.Dimension.Y);
 
-                        densityField.ScalarValues[scalarValuesIndex] = ((new Vector3(u, v, w) - sphereCenter).Length() - radius) > 0 ? 0 : 1;
+                        densityField.ScalarValues[scalarValuesIndex] = ((new Vector3(u, v, w) - sphereCenter).Length() - radius) > 0.0f ? 0.0f : 1.0f;
                     }
                 }
+            }
+
+            return densityField;
+        }
+
+        internal static DensityField SolidVolume(int dimension)
+        {
+            DensityField densityField = new DensityField(dimension);
+
+            for (int index = 0; index < densityField.ScalarValues.Length; index++)
+            {
+                densityField.ScalarValues[index] = 1.0f;
             }
 
             return densityField;
