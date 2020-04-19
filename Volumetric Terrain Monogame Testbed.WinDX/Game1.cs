@@ -26,6 +26,10 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 
             // max Size for Texture2D on this card: 16.384 x 16.384 * 32 Bit
             // max Size for Texture3D on this card: 512 * 512 * 512 * 32 Bit
+
+            // Initialize a basic camera (Pos: (0.0, 0.0, 0.0); Viewing direction (0.0, 0.0, -1.0); Up direction (0.0, 1.0, 0.0)
+            FreeCamera camera = new FreeCamera();
+
             base.Initialize();
         }
 
