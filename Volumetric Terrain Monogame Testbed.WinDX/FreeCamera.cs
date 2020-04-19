@@ -105,7 +105,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 
         #region Constructor
         /// <summary>
-        /// Creates a new FreeCamera instance using some default values. (<see cref="CameraBase"/>).
+        /// Creates a new FreeCamera instance using some default values.
         /// </summary>
         /// <remarks>
         /// Position will be set to the world space origin (0.0, 0.0, 0.0).
