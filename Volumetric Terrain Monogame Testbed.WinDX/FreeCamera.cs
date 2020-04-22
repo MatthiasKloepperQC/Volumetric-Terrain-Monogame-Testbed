@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -107,15 +108,18 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         /// <summary>
         /// Creates a new FreeCamera instance using some default values.
         /// </summary>
+        /// <param name="device">The <see cref="GraphicsDevice"/> from which to deduct some settings for the new FreeCamera instance.</param>
         /// <remarks>
         /// Position will be set to the world space origin (0.0, 0.0, 0.0).
         /// Viewing direction will be set to (0.0, 0.0, -1.0) (= "into the screen").
         /// Up direction will be set to (0.0, 1.0, 0.0) (= "up as normally perceived").
         /// The vertical field of view will be set to 90°.
+        /// The aspect ratio will be set to the aspect ratio of the passed GraphicsDevice's viewport.
         /// The near clipping plane will be placed at a distance of 1.0.
         /// The far clipping plane will be placed at a distance of 10,000.0.
         /// </remarks>
-        internal FreeCamera() : this(Vector3.Zero, FreeCamera.defaultViewingDirection, FreeCamera.defaultUpDirection, 90.0f, 1.0f, 10000.0f)
+        internal FreeCamera(GraphicsDevice device) : this(Vector3.Zero, FreeCamera.defaultViewingDirection, FreeCamera.defaultUpDirection, 90.0f, 
+            device.Viewport.AspectRatio, 1.0f, 10000.0f)
         {
         }
 
@@ -126,9 +130,11 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         /// <param name="viewDirection">The initial viewing direction (not the target point!) of the camera in world space.</param>
         /// <param name="upDirection">The initial up direction of the camera.</param>
         /// <param name="verticalFieldOfView">The vertical field of view / the vertical aperture angle (https://en.wikipedia.org/wiki/Field_of_view_in_video_games) of the camera in degrees.</param>
+        /// <param name="aspectRatio">The aspect ratio of the camera.</param>
         /// <param name="nearClippingPlaneDistance">The distance to the near clipping plane.</param>
         /// <param name="farClippingPlaneDistance">The distance to the far clipping plane.</param>
-        internal FreeCamera(Vector3 position, Vector3 viewDirection, Vector3 upDirection, float verticalFieldOfView, float nearClippingPlaneDistance, float farClippingPlaneDistance)
+        internal FreeCamera(Vector3 position, Vector3 viewDirection, Vector3 upDirection, float verticalFieldOfView, float aspectRatio, 
+            float nearClippingPlaneDistance, float farClippingPlaneDistance)
         {
             // Default values.
             this.rotation = Quaternion.Identity;
@@ -139,6 +145,15 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             this.viewMatrixDirty = true;
 
             // Check and transfer values from call.
+            if (aspectRatio < 0.0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(aspectRatio), "The aspect ration has to be greater than zero.");
+            }
+            else
+            {
+                this.aspectRatio = aspectRatio;
+            }
+
             if (farClippingPlaneDistance <= 0.0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(farClippingPlaneDistance), "The far clipping plane has to have a disctance > 0.0 to the camera.");
@@ -163,6 +178,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             }
 
             this.position = position;
+
             if (upDirection.Length() == 0.0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(upDirection), "The up Direction has to be a direction. A vector of length 0.0 does not have a direction.");
