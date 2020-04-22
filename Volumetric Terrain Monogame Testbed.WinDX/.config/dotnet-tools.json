@@ -2,16 +2,16 @@
   "version": 1,
   "isRoot": true,
   "tools": {
-    "dotnet-mgcb": {
-      "version": "3.8.0.1297-develop",
-      "commands": [
-        "mgcb"
-      ]
-    },
     "dotnet-mgfxc": {
       "version": "3.8.0.1180-develop",
       "commands": [
         "mgfxc"
+      ]
+    },
+    "dotnet-mgcb": {
+      "version": "3.8.0.1308-develop",
+      "commands": [
+        "mgcb"
       ]
     }
   }
