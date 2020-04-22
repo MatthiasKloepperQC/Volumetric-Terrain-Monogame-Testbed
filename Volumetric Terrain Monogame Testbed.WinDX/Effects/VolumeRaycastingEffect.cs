@@ -18,69 +18,24 @@ namespace BattletechUniverse.Effects
     }
 
     class VolumeRaycastingEffect : CustomEffectBase
-    {/*
+    {
         #region Members
         private EffectDirtyFlags dirtyFlags;
-        private Matrix modelRotationMatrix = Matrix.Identity;
-        private Matrix modelScaleMatrix = Matrix.Identity;
-        private Matrix modelTranslationMatrix = Matrix.Identity;
         private Matrix projectionMatrix = Matrix.Identity;
-        private bool useSingleTexture;
         private bool useVertexColor;
         private Matrix viewMatrix = Matrix.Identity;
         private Matrix worldMatrix = Matrix.Identity;
         private Matrix worldViewProjectionMatrix = Matrix.Identity;
-        #endregion*/
+        #endregion
 
         #region Constructor
         internal VolumeRaycastingEffect(GraphicsDevice graphicsDevice) : base(graphicsDevice, typeof(VolumeRaycastingEffect))
         {
-            /*
             this.Initialize();
-            */
         }
         #endregion
-        /*
-        #region
-        public Matrix ModelRotationMatrix
-        {
-            get
-            {
-                return this.modelRotationMatrix;
-            }
-            set
-            {
-                this.modelRotationMatrix = value;
-                this.dirtyFlags |= EffectDirtyFlags.WorldMatrix;
-            }
-        }
 
-        public Matrix ModelScaleMatrix
-        {
-            get
-            {
-                return this.modelScaleMatrix;
-            }
-            set
-            {
-                this.modelScaleMatrix = value;
-                this.dirtyFlags |= EffectDirtyFlags.WorldMatrix;
-            }
-        }
-
-        public Matrix ModelTranslationMatrix
-        {
-            get
-            {
-                return this.modelTranslationMatrix;
-            }
-            set
-            {
-                this.modelTranslationMatrix = value;
-                this.dirtyFlags |= EffectDirtyFlags.WorldMatrix;
-            }
-        }
-
+        #region Properties
         public Matrix ProjectionMatrix
         {
             get
@@ -107,19 +62,6 @@ namespace BattletechUniverse.Effects
             }
         }
 
-        public bool UseSingleTexture
-        {
-            get
-            {
-                return this.useSingleTexture;
-            }
-            set
-            {
-                this.useSingleTexture = value;
-                this.UpdateTechnique();
-            }
-        }
-
         public Matrix ViewMatrix
         {
             get
@@ -137,8 +79,12 @@ namespace BattletechUniverse.Effects
         {
             get
             {
-                this.UpdateWorldMatrix();
                 return this.worldMatrix;
+            }
+            set
+            {
+                this.worldMatrix = value;
+                this.dirtyFlags |= EffectDirtyFlags.WorldViewProjectionMatrix;
             }
         }
 
@@ -146,7 +92,6 @@ namespace BattletechUniverse.Effects
         {
             get
             {
-                this.UpdateWorldViewProjectionMatrix();
                 return this.worldViewProjectionMatrix;
             }
         }
@@ -155,13 +100,7 @@ namespace BattletechUniverse.Effects
         #region Methods
         private void Initialize()
         {
-            this.dirtyFlags = EffectDirtyFlags.None;
-
-            this.ModelRotationMatrix = Matrix.Identity;
-            this.ModelScaleMatrix = Matrix.Identity;
-            this.ModelTranslationMatrix = Matrix.Identity;
-            this.ProjectionMatrix = Matrix.Identity;
-            this.ViewMatrix = Matrix.Identity;
+            this.useVertexColor = false;
         }
 
         protected override void OnApply()
@@ -176,40 +115,11 @@ namespace BattletechUniverse.Effects
             {
                 this.CurrentTechnique = this.Techniques["VertexColors"];
             }
-            else if (this.useSingleTexture)
-            {
-                this.CurrentTechnique = this.Techniques["SingleTexture"];
-            }
-            //else throw new InvalidOperationException("Keine Shader-Technik für die gesetzten Parameter vorhanden.");
-        }
-
-        private void UpdateWorldMatrix()
-        {
-            if ((this.dirtyFlags & EffectDirtyFlags.WorldMatrix) != 0)
-            {
-                // Reihenfolge: Scale, Rotation, Translation.
-                Matrix modelScaleRotationMatrix;
-                Matrix.Multiply(ref this.modelScaleMatrix, ref this.modelRotationMatrix, out modelScaleRotationMatrix);
-                Matrix.Multiply(ref modelScaleRotationMatrix, ref this.modelTranslationMatrix, out this.worldMatrix);
-
-                // Die World-Matrix ist jetzt frisch berechnet.
-                this.dirtyFlags ^= EffectDirtyFlags.WorldMatrix;
-
-                // Dadurch muss aber vermutlich die WorldViewProjection-Matrix neu berechnet werden.
-                this.dirtyFlags |= EffectDirtyFlags.WorldViewProjectionMatrix;
-
-                // An die Grafikkarte übergeben.
-                if (this.Parameters.Where(parameter => parameter.Name == "WorldMatrix").Count() > 0)
-                {
-                    this.Parameters["WorldMatrix"].SetValue(this.worldMatrix);
-                }
-            }
+            else throw new InvalidOperationException("Keine Shader-Technik für die gesetzten Parameter vorhanden.");
         }
 
         private void UpdateWorldViewProjectionMatrix()
         {
-            this.UpdateWorldMatrix();
-
             if ((this.dirtyFlags & EffectDirtyFlags.WorldViewProjectionMatrix) != 0)
             {
                 // Reihenfolge: World, View, Projection.
@@ -225,6 +135,5 @@ namespace BattletechUniverse.Effects
             }
         }
         #endregion
-        */
     }
 }
