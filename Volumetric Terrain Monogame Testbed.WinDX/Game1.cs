@@ -56,7 +56,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 
             // TODO: Add your update logic here
 
-            this.vrce.UseVertexColors = true;
+            this.vrce.UseVertexColor = true;
             this.vrce.WorldMatrix = Matrix.Identity;
             this.vrce.ProjectionMatrix = this.camera.ProjectionMatrix;
             this.vrce.ViewMatrix = this.camera.ViewMatrix;
@@ -74,6 +74,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             RasterizerState nrs = new RasterizerState();
             nrs.CullMode = CullMode.None;
             //this.GraphicsDevice.RasterizerState = nrs;
+            this.vrce.UseRaymarchFullScreen = true;
 
             base.Update(gameTime);
         }

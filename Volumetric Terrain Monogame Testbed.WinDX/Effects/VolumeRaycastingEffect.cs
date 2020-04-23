@@ -22,6 +22,7 @@ namespace BattletechUniverse.Effects
         #region Members
         private EffectDirtyFlags dirtyFlags;
         private Matrix projectionMatrix = Matrix.Identity;
+        private bool useRaymarchFullScreen;
         private bool useVertexColor;
         private Matrix viewMatrix = Matrix.Identity;
         private Matrix worldMatrix = Matrix.Identity;
@@ -49,7 +50,21 @@ namespace BattletechUniverse.Effects
             }
         }
 
-        public bool UseVertexColors
+        public bool UseRaymarchFullScreen
+        {
+            get
+            {
+                return this.useRaymarchFullScreen;
+            }
+            set
+            {
+                this.useRaymarchFullScreen = value;
+                this.useVertexColor = false;
+                this.UpdateTechnique();
+            }
+        }
+
+        public bool UseVertexColor
         {
             get
             {
@@ -58,6 +73,7 @@ namespace BattletechUniverse.Effects
             set
             {
                 this.useVertexColor = value;
+                this.useRaymarchFullScreen = false;
                 this.UpdateTechnique();
             }
         }
@@ -111,7 +127,11 @@ namespace BattletechUniverse.Effects
 
         private void UpdateTechnique()
         {
-            if (this.UseVertexColors)
+            if (this.UseRaymarchFullScreen)
+            {
+                this.CurrentTechnique = this.Techniques["RaymarchFullScreen"];
+            }
+            else if (this.UseVertexColor)
             {
                 this.CurrentTechnique = this.Techniques["VertexColors"];
             }
