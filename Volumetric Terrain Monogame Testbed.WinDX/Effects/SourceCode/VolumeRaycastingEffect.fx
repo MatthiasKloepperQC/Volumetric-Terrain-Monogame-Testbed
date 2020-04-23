@@ -49,13 +49,14 @@ float4 TransformPositionToScreenSpace(in float4 position)
 // Vertex-Shader Funktionen
 SV_PositionScreenPosition VS_RaymarchFullscreen(in float4 position : POSITION0)
 {
-	// Semantic: SV_POSITION
+	// Semantic: SV_POSITION -> Scales normalized device coordinates to pixel coordinates.
 	SV_PositionScreenPosition output;
-	output.Position = TransformPositionToScreenSpace(position);
+	// The vertex shader is fed with normalized device coordinates [-1.0f, 1.0f] already in screen space.
+	// No need to transform any coordinates.
+	output.Position = position;
 
-	// 
-	// Transform gives screen space in homogeneous coordinates in the range [-1.0f,1.0f]. Modify to euclidian coordinates in the range [0.0f,1.0f].
-	output.ScreenPosition = output.Position / output.Position.w / 2.0f + 0.5f;
+	// Any other semantic does not scale but transports the normalized device coordinates unmodified.
+	output.ScreenPosition = position / position.w;
 
 	return output;
 }
@@ -73,9 +74,8 @@ SV_PositionColor VS_TransformPosition_TransportColor(in PositionColor input)
 // Pixel-Shader Funktionen
 float4 PS_OutputScreenposColor(SV_PositionScreenPosition input) : COLOR
 {
-	float4 output = float4(input.ScreenPosition.x, input.ScreenPosition.y, 0.0f, 0.0f);
 	float xline = 0.5f;
-	float xspread = 0.002f;
+	float xspread = 0.001f;
 	float xmin = xline - xspread;
 	float xmax = xline + xspread;
 	float yline = 0.5f;
@@ -83,8 +83,22 @@ float4 PS_OutputScreenposColor(SV_PositionScreenPosition input) : COLOR
 	float ymin = yline - yspread;
 	float ymax = yline + yspread;
 
-	if ((input.ScreenPosition.x >= xmin) && (input.ScreenPosition.x <= xmax)) output = float4(1.0f, 1.0f, 1.0f, 0.0f);
-	if ((input.ScreenPosition.y >= ymin) && (input.ScreenPosition.y <= ymax)) output = float4(1.0f, 1.0f, 1.0f, 0.0f);
+	// Vertex shader passes unmodified normalized device coordinates in input.ScreenPosition [-1.0f, 1.0f].
+	// Scale to [0.0f, 1.0f] to use the full range of colors.
+	input.ScreenPosition = input.ScreenPosition / 2.0f + 0.5f;
+	float4 output = float4(input.ScreenPosition.x, input.ScreenPosition.y, 0.0f, 1.0f);
+
+	// Draw a white cross through the center (x == 0.5f and y == 0.5f).
+	float4 crossColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	if ((input.ScreenPosition.x >= xmin) && (input.ScreenPosition.x <= xmax)) output = crossColor;
+	if ((input.ScreenPosition.y >= ymin) && (input.ScreenPosition.y <= ymax)) output = crossColor;
+
+	// Draw a white box around the screen (x == 0.0f and y == 0.0f and x == 1.0f and y == 1.0f).
+	float4 borderColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	if (input.ScreenPosition.x <= 0.0f + xspread) output = borderColor;
+	if (input.ScreenPosition.x >= 1.0f - xspread) output = borderColor;
+	if (input.ScreenPosition.y <= 0.0f + xspread) output = borderColor;
+	if (input.ScreenPosition.y >= 1.0f - xspread) output = borderColor;
 
 	return output;
 }

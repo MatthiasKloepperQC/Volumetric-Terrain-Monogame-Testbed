@@ -20,6 +20,11 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             this.graphics.PreparingDeviceSettings += this.Graphics_PreparingDeviceSettings;
             this.Content.RootDirectory = "Content";
             this.IsMouseVisible = true;
+
+            // Set viewport to 1000 x 1000 pixels.
+            this.graphics.PreferredBackBufferHeight = 1000;
+            this.graphics.PreferredBackBufferWidth = 1000;
+            this.graphics.ApplyChanges();
         }
 
         protected override void Initialize()
@@ -56,25 +61,9 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 
             // TODO: Add your update logic here
 
-            this.vrce.UseVertexColor = true;
             this.vrce.WorldMatrix = Matrix.Identity;
             this.vrce.ProjectionMatrix = this.camera.ProjectionMatrix;
             this.vrce.ViewMatrix = this.camera.ViewMatrix;
-
-            this.vbuffer = new VertexBuffer(this.GraphicsDevice, VertexPositionColor.VertexDeclaration, 6, BufferUsage.WriteOnly);
-            VertexPositionColor[] vdata = new VertexPositionColor[6];
-            vdata[0] = new VertexPositionColor(new Vector3(-2, 2, -5), Color.Red);
-            vdata[1] = new VertexPositionColor(new Vector3(2, 2, -5), Color.Green);
-            vdata[2] = new VertexPositionColor(new Vector3(-2, -2, -5), Color.Blue);
-            vdata[3] = new VertexPositionColor(new Vector3(-2, -2, -5), Color.Yellow);
-            vdata[4] = new VertexPositionColor(new Vector3(2, 2, -5), Color.Orange);
-            vdata[5] = new VertexPositionColor(new Vector3(2, -2, -5), Color.Purple);
-            this.vbuffer.SetData(vdata);
-            this.GraphicsDevice.SetVertexBuffer(this.vbuffer);
-            RasterizerState nrs = new RasterizerState();
-            nrs.CullMode = CullMode.None;
-            //this.GraphicsDevice.RasterizerState = nrs;
-            this.vrce.UseRaymarchFullScreen = true;
 
             base.Update(gameTime);
         }
@@ -90,7 +79,8 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             {
                 this.vrce.CurrentTechnique.Passes[passIndex].Apply();
 
-                this.GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, 2);
+                //this.GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, 2);
+                this.vrce.DrawFullScreenQuad();
             }
 
             base.Draw(gameTime);
