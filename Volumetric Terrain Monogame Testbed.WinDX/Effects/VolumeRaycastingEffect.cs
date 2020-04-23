@@ -45,20 +45,11 @@ namespace BattletechUniverse.Effects
         #endregion
 
         #region Properties
-        public IndexedQuad FullScreenQuad
-        {
-            get
-            {
-                return this.fullScreenQuad;
-            }
-        }
+        public IndexedQuad FullScreenQuad => this.fullScreenQuad;
 
         public Matrix ProjectionMatrix
         {
-            get
-            {
-                return this.projectionMatrix;
-            }
+            get => this.projectionMatrix;
             set
             {
                 this.projectionMatrix = value;
@@ -68,10 +59,7 @@ namespace BattletechUniverse.Effects
 
         public bool UseRaymarchFullScreen
         {
-            get
-            {
-                return this.useRaymarchFullScreen;
-            }
+            get => this.useRaymarchFullScreen;
             set
             {
                 this.useRaymarchFullScreen = value;
@@ -82,10 +70,7 @@ namespace BattletechUniverse.Effects
 
         public bool UseVertexColor
         {
-            get
-            {
-                return this.useVertexColor;
-            }
+            get => this.useVertexColor;
             set
             {
                 this.useVertexColor = value;
@@ -96,10 +81,7 @@ namespace BattletechUniverse.Effects
 
         public Matrix ViewMatrix
         {
-            get
-            {
-                return this.viewMatrix;
-            }
+            get => this.viewMatrix;
             set
             {
                 this.viewMatrix = value;
@@ -109,10 +91,7 @@ namespace BattletechUniverse.Effects
 
         public Matrix WorldMatrix
         {
-            get
-            {
-                return this.worldMatrix;
-            }
+            get => this.worldMatrix;
             set
             {
                 this.worldMatrix = value;
@@ -120,13 +99,7 @@ namespace BattletechUniverse.Effects
             }
         }
 
-        public Matrix WorldViewProjectionMatrix
-        {
-            get
-            {
-                return this.worldViewProjectionMatrix;
-            }
-        }
+        public Matrix WorldViewProjectionMatrix => this.worldViewProjectionMatrix;
         #endregion
 
         #region Methods
@@ -214,7 +187,10 @@ namespace BattletechUniverse.Effects
             {
                 this.CurrentTechnique = this.Techniques["VertexColors"];
             }
-            else throw new InvalidOperationException("Keine Shader-Technik für die gesetzten Parameter vorhanden.");
+            else
+            {
+                throw new InvalidOperationException("Keine Shader-Technik für die gesetzten Parameter vorhanden.");
+            }
         }
 
         private void UpdateWorldViewProjectionMatrix()
@@ -222,8 +198,7 @@ namespace BattletechUniverse.Effects
             if ((this.dirtyFlags & EffectDirtyFlags.WorldViewProjectionMatrix) != 0)
             {
                 // Reihenfolge: World, View, Projection.
-                Matrix worldViewMatrix;
-                Matrix.Multiply(ref this.worldMatrix, ref this.viewMatrix, out worldViewMatrix);
+                Matrix.Multiply(ref this.worldMatrix, ref this.viewMatrix, out Matrix worldViewMatrix);
                 Matrix.Multiply(ref worldViewMatrix, ref this.projectionMatrix, out this.worldViewProjectionMatrix);
 
                 // Die WorldViewProjection-Matrix ist jetzt frisch berechnet.

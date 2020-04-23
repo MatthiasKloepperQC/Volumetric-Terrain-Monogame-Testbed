@@ -9,7 +9,6 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
     {
         private FreeCamera camera;
         private readonly GraphicsDeviceManager graphics;
-        private VertexBuffer vbuffer;
         private VolumeRaycastingEffect vrce;
 
         public Game1()
