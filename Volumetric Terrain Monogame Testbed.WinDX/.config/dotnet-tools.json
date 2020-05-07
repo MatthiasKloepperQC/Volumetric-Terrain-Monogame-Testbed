@@ -9,7 +9,7 @@
       ]
     },
     "dotnet-mgcb": {
-      "version": "3.8.0.1308-develop",
+      "version": "3.8.0.1336-develop",
       "commands": [
         "mgcb"
       ]
