@@ -105,15 +105,17 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             }
 
             // TODO: Add your update logic here
-            this.vrce.WorldMatrix = Matrix.Identity;
-            this.vrce.ProjectionMatrix = this.camera.ProjectionMatrix;
-            this.vrce.ViewMatrix = this.camera.ViewMatrix;
-
             // Update all updateable components.
             foreach (IUpdateableComponent updateableComponent in this.componentManager.GetComponentsByInterface<IUpdateableComponent>().FindAll(component => component.Enabled))
             {
                 updateableComponent.Update(gameTime);
             }
+
+            this.vrce.CameraPositionWorldSpace = Vector3.Zero;
+            this.vrce.WorldMatrix = Matrix.Identity;
+            this.vrce.ProjectionMatrix = this.camera.ProjectionMatrix;
+            this.vrce.ViewMatrix = this.camera.ViewMatrix;
+            this.vrce.Mode = EffectMode.ColorFromCameraRayDirection;
 
             base.Update(gameTime);
         }

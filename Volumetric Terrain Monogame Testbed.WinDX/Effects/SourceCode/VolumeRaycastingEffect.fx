@@ -34,13 +34,20 @@ struct SV_PositionScreenPosition
 	float4 ScreenPosition : TEXCOORD7;
 };
 
+
 // Die globalen Variablen können aus der Anwendung heraus gesetzt werden.
 
-// Die kombinierten World-, View- und Projection-Matritzen zur Positionierung der Zeichnung an der richtigen Stelle auf dem Bildschirm.
-matrix WorldViewProjectionMatrix;
+// The position of the camera in world space.
+uniform float4 CameraPositionWorldSpace;
 
-// Überführt die Positionen eines Eckpunkts anhand der WorldViewProjectionMatrix aus dem Model-Space in den View-Space.
-float4 TransformPositionToScreenSpace(in float4 position)
+// The inverse of the ViewProjection matrix to recreate world space from screen space.
+uniform matrix InverseViewProjectionMatrix;
+
+// The combined world-, view- and projection-matrices to position the vertices at the correct point on screen.
+uniform matrix WorldViewProjectionMatrix;
+
+// Transforms a vertex position from model space to screen space.
+float4 TransformModelSpaceToScreenSpace(in float4 position)
 {
 	return mul(position, WorldViewProjectionMatrix);
 }
@@ -61,18 +68,82 @@ SV_PositionScreenPosition VS_RaymarchFullscreen(in float4 position : POSITION0)
 	return output;
 }
 
-SV_PositionColor VS_TransformPosition_TransportColor(in PositionColor input)
+SV_PositionScreenPosition VS_ColorFromCameraRayDirection(in float4 position : POSITION0)
 {
-	SV_PositionColor output = (PositionColor)0;
+	// Semantic: SV_POSITION -> Scales normalized device coordinates to pixel coordinates.
+	SV_PositionScreenPosition output;
+	// The vertex shader is fed with normalized device coordinates [-1.0f, 1.0f] already in screen space.
+	// No need to transform any coordinates.
+	output.Position = position;
 
-	output.Position = TransformPositionToScreenSpace(input.Position);
-	output.Color = input.Color;
+	// Any other semantic does not scale but transports the normalized device coordinates unmodified.
+	output.ScreenPosition = position / position.w;
+
+	return output;
+}
+
+SV_PositionScreenPosition VS_ColorFromScreenSpacePosition(in float4 position : POSITION0)
+{
+	// Semantic: SV_POSITION -> Scales normalized device coordinates to pixel coordinates.
+	SV_PositionScreenPosition output;
+	// The vertex shader is fed with normalized device coordinates [-1.0f, 1.0f] already in screen space.
+	// No need to transform any coordinates.
+	output.Position = position;
+
+	// Any other semantic does not scale but transports the normalized device coordinates unmodified.
+	output.ScreenPosition = position / position.w;
+
 	return output;
 }
 
 
 // Pixel-Shader Funktionen
-float4 PS_OutputScreenposColor(SV_PositionScreenPosition input) : COLOR
+float4 PS_ColorFromCameraRayDirection(SV_PositionScreenPosition input) : COLOR
+{
+	float xline = 0.5f;
+	float xspread = 0.001f;
+	float xmin = xline - xspread;
+	float xmax = xline + xspread;
+	float yline = 0.5f;
+	float yspread = xspread;
+	float ymin = yline - yspread;
+	float ymax = yline + yspread;
+
+	/*
+	// Vertex shader passes unmodified normalized device coordinates in input.ScreenPosition [-1.0f, 1.0f].
+	// Scale to [0.0f, 1.0f] to use the full range of colors.
+	input.ScreenPosition = input.ScreenPosition / 2.0f + 0.5f;
+	float4 output = float4(input.ScreenPosition.x, input.ScreenPosition.y, 0.0f, 1.0f);
+
+	// Draw a white cross through the center (x == 0.5f and y == 0.5f).
+	float4 crossColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	if ((input.ScreenPosition.x >= xmin) && (input.ScreenPosition.x <= xmax)) output = crossColor;
+	if ((input.ScreenPosition.y >= ymin) && (input.ScreenPosition.y <= ymax)) output = crossColor;
+
+	// Draw a white box around the screen (x == 0.0f and y == 0.0f and x == 1.0f and y == 1.0f).
+	float4 borderColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	if (input.ScreenPosition.x <= 0.0f + xspread) output = borderColor;
+	if (input.ScreenPosition.x >= 1.0f - xspread) output = borderColor;
+	if (input.ScreenPosition.y <= 0.0f + xspread) output = borderColor;
+	if (input.ScreenPosition.y >= 1.0f - xspread) output = borderColor;
+	*/
+
+	// Restore world space position from screen space position.
+	float4 worldSpacePos = mul(input.ScreenPosition, InverseViewProjectionMatrix);
+	worldSpacePos = worldSpacePos / worldSpacePos.w;
+
+	// Calculate ray direction from camera to restored world space position.
+	float4 cameraRayDirection = worldSpacePos - CameraPositionWorldSpace;
+	cameraRayDirection = normalize(cameraRayDirection);
+
+	// Scale direction to [0.0f, 1.0f] to use full range of colors.
+	float4 output = cameraRayDirection / 2.0f + 0.5f;
+	output.w = 1.0f;
+
+	return output;
+}
+
+float4 PS_ColorFromScreenSpacePosition(SV_PositionScreenPosition input) : COLOR
 {
 	float xline = 0.5f;
 	float xspread = 0.001f;
@@ -103,14 +174,6 @@ float4 PS_OutputScreenposColor(SV_PositionScreenPosition input) : COLOR
 	return output;
 }
 
-float4 PS_OutputVertexColor(SV_PositionColor input) : COLOR
-{
-	float4 output = (float4)0;
-	output = input.Color;
-
-	return output;
-}
-
 
 // Techniken
 technique RaymarchFullScreen
@@ -118,15 +181,24 @@ technique RaymarchFullScreen
 	pass Pass0
 	{
 		VertexShader = compile VS_SHADERMODEL VS_RaymarchFullscreen();
-		PixelShader = compile PS_SHADERMODEL PS_OutputScreenposColor();
+		PixelShader = compile PS_SHADERMODEL PS_ColorFromScreenSpacePosition();
 	}
 };
 
-technique VertexColors
+technique ColorFromCameraRayDirection
 {
 	pass Pass0
 	{
-		VertexShader = compile VS_SHADERMODEL VS_TransformPosition_TransportColor();
-		PixelShader = compile PS_SHADERMODEL PS_OutputVertexColor();
+		VertexShader = compile VS_SHADERMODEL VS_ColorFromCameraRayDirection();
+		PixelShader = compile PS_SHADERMODEL PS_ColorFromCameraRayDirection();
+	}
+};
+
+technique ColorFromScreenSpacePosition
+{
+	pass Pass0
+	{
+		VertexShader = compile VS_SHADERMODEL VS_ColorFromScreenSpacePosition();
+		PixelShader = compile PS_SHADERMODEL PS_ColorFromScreenSpacePosition();
 	}
 };

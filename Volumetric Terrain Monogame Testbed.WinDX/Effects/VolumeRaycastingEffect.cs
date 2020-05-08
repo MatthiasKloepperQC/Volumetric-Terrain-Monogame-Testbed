@@ -15,14 +15,21 @@ namespace BattletechUniverse.Effects
         None = 0,
 
         /// <summary>
-        /// Indicates that the world matrix has to be recalculated.
+        /// Indicates that the WorldViewProjection matrix has to be recalculated.
         /// </summary>
-        WorldMatrix = 1,
+        WorldViewProjectionMatrix = 1,
 
         /// <summary>
-        /// Indicates that the world-view-projection matrix has to be recalculated.
+        /// Indicates that the inverse ViewProjection matrix has to be recalculated.
         /// </summary>
-        WorldViewProjectionMatrix = 2
+        InverseViewProjectionMatrix = 2
+    }
+
+    enum EffectMode
+    {
+        ColorFromScreenSpacePosition,
+        ColorFromCameraRayDirection,
+        FullVolumeRaycasting
     }
 
     /// <summary>
@@ -44,14 +51,14 @@ namespace BattletechUniverse.Effects
     /// <summary>
     /// A monogame effect for volume raycasting.
     /// </summary>
-    class VolumeRaycastingEffect : CustomEffectBase
+    internal class VolumeRaycastingEffect : CustomEffectBase
     {
         #region Members
         private EffectDirtyFlags dirtyFlags;
         private CombinedBuffers fullScreenQuad;
+        private Matrix inverseViewProjectionMatrix = Matrix.Identity;
+        private EffectMode mode;
         private Matrix projectionMatrix = Matrix.Identity;
-        private bool useRaymarchFullScreen;
-        private bool useVertexColor;
         private Matrix viewMatrix = Matrix.Identity;
         private Matrix worldMatrix = Matrix.Identity;
         private Matrix worldViewProjectionMatrix = Matrix.Identity;
@@ -64,70 +71,107 @@ namespace BattletechUniverse.Effects
         /// <param name="graphicsDevice">The <see cref="GraphicsDevice"/> instance to render this effect.</param>
         internal VolumeRaycastingEffect(GraphicsDevice graphicsDevice) : base(graphicsDevice, typeof(VolumeRaycastingEffect))
         {
-            this.dirtyFlags = EffectDirtyFlags.WorldMatrix | EffectDirtyFlags.WorldViewProjectionMatrix;
-            this.useRaymarchFullScreen = true;
-            this.useVertexColor = false;
+            this.dirtyFlags |= EffectDirtyFlags.WorldViewProjectionMatrix;
+            this.mode = EffectMode.ColorFromScreenSpacePosition;
 
             this.InitializeFullScreenQuad();
         }
         #endregion
 
         #region Properties
-        public CombinedBuffers FullScreenQuad => this.fullScreenQuad;
+        /// <summary>
+        /// Gets or sets the position of the camera in world space.
+        /// </summary>
+        internal Vector3 CameraPositionWorldSpace { get; set; }
 
-        public Matrix ProjectionMatrix
+        internal EffectMode Mode
+        {
+            get => this.mode;
+            set
+            {
+                this.mode = value;
+                this.UpdateTechnique();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the projection matrix (view space -> screen space) for this <see cref="VolumeRaycastingEffect"/> instance.
+        /// </summary>
+        internal Matrix ProjectionMatrix
         {
             get => this.projectionMatrix;
             set
             {
-                this.projectionMatrix = value;
-                this.dirtyFlags |= EffectDirtyFlags.WorldViewProjectionMatrix;
+                if (this.projectionMatrix != value)
+                {
+                    this.projectionMatrix = value;
+                    this.dirtyFlags |= EffectDirtyFlags.WorldViewProjectionMatrix | EffectDirtyFlags.InverseViewProjectionMatrix;
+                }
             }
         }
 
-        public bool UseRaymarchFullScreen
-        {
-            get => this.useRaymarchFullScreen;
-            set
-            {
-                this.useRaymarchFullScreen = value;
-                this.useVertexColor = false;
-                this.UpdateTechnique();
-            }
-        }
-
-        public bool UseVertexColor
-        {
-            get => this.useVertexColor;
-            set
-            {
-                this.useVertexColor = value;
-                this.useRaymarchFullScreen = false;
-                this.UpdateTechnique();
-            }
-        }
-
-        public Matrix ViewMatrix
+        /// <summary>
+        /// Gets or sets the view matrix (world space -> view space) for this <see cref="VolumeRaycastingEffect"/> instance.
+        /// </summary>
+        internal Matrix ViewMatrix
         {
             get => this.viewMatrix;
             set
             {
-                this.viewMatrix = value;
-                this.dirtyFlags |= EffectDirtyFlags.WorldViewProjectionMatrix;
+                if (this.viewMatrix != value)
+                {
+                    this.viewMatrix = value;
+                    this.dirtyFlags |= EffectDirtyFlags.WorldViewProjectionMatrix | EffectDirtyFlags.InverseViewProjectionMatrix;
+                }
             }
         }
 
-        public Matrix WorldMatrix
+        /// <summary>
+        /// Gets the inverse ViewProjection matrix (screen space -> world space) for this <see cref="VolumeRaycastingEffect"/> instance.
+        /// </summary>
+        internal Matrix InverseViewProjectionMatrix
+        {
+            get
+            {
+                if ((this.dirtyFlags & EffectDirtyFlags.InverseViewProjectionMatrix) != 0)
+                {
+                    this.UpdateInverseViewProjectionMatrix();
+                }
+                return this.inverseViewProjectionMatrix;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the world matrix (object space -> world space) for this <see cref="VolumeRaycastingEffect"/> instance.
+        /// </summary>
+        internal Matrix WorldMatrix
         {
             get => this.worldMatrix;
             set
             {
-                this.worldMatrix = value;
-                this.dirtyFlags |= EffectDirtyFlags.WorldViewProjectionMatrix;
+                if (this.worldMatrix != value)
+                {
+                    this.worldMatrix = value;
+                    this.dirtyFlags |= EffectDirtyFlags.WorldViewProjectionMatrix;
+                }
             }
         }
 
-        public Matrix WorldViewProjectionMatrix => this.worldViewProjectionMatrix;
+        /// <summary>
+        /// Gets the WorldViewProjection matrix (object space -> screen space) for this <see cref="VolumeRaycastingEffect"/> instance.
+        /// </summary>
+        internal Matrix WorldViewProjectionMatrix
+        {
+            get
+            {
+                if ((this.dirtyFlags & EffectDirtyFlags.WorldViewProjectionMatrix) != 0)
+                {
+                    this.UpdateWorldViewProjectionMatrix();
+                }
+
+                return this.worldViewProjectionMatrix;
+            }
+        }
         #endregion
 
         #region Methods
@@ -188,39 +232,60 @@ namespace BattletechUniverse.Effects
 
         protected override void OnApply()
         {
-            this.UpdateWorldViewProjectionMatrix();
+            // Transfer uniform values to graphics device.
+            this.Parameters["CameraPositionWorldSpace"].SetValue(this.CameraPositionWorldSpace);
+            this.Parameters["InverseViewProjectionMatrix"].SetValue(this.InverseViewProjectionMatrix);
+            //this.Parameters["WorldViewProjectionMatrix"].SetValue(this.WorldViewProjectionMatrix);
             base.OnApply();
         }
 
+        /// <summary>
+        /// Selects the appropriate technique of the shader base on the <see cref="Mode"/> property.
+        /// </summary>
         private void UpdateTechnique()
         {
-            if (this.UseRaymarchFullScreen)
+            this.CurrentTechnique = this.mode switch
             {
-                this.CurrentTechnique = this.Techniques["RaymarchFullScreen"];
-            }
-            else if (this.UseVertexColor)
+                EffectMode.ColorFromCameraRayDirection => this.Techniques["ColorFromCameraRayDirection"],
+                EffectMode.ColorFromScreenSpacePosition => this.Techniques["ColorFromScreenSpacePosition"],
+                EffectMode.FullVolumeRaycasting => this.Techniques["FullVolumeRaycasting"],
+                _ => throw new InvalidOperationException("No existing shader technique for this mode."),
+            };
+        }
+
+        /// <summary>
+        /// Updates the inverse ViewProjection matrix.
+        /// </summary>
+        private void UpdateInverseViewProjectionMatrix()
+        {
+            if ((this.dirtyFlags & EffectDirtyFlags.InverseViewProjectionMatrix) != 0)
             {
-                this.CurrentTechnique = this.Techniques["VertexColors"];
-            }
-            else
-            {
-                throw new InvalidOperationException("Keine Shader-Technik für die gesetzten Parameter vorhanden.");
+                // Calculate the ViewProjection matrix.
+                // Order: View, Projection.
+                Matrix.Multiply(ref this.viewMatrix, ref this.projectionMatrix, out Matrix viewProjectionMatrix);
+
+                // Calculate the inverse of the ViewProjection matrix.
+                Matrix.Invert(ref viewProjectionMatrix, out this.inverseViewProjectionMatrix);
+
+                // The inverse ViewProjection matrix is up tp date now.
+                this.dirtyFlags ^= EffectDirtyFlags.InverseViewProjectionMatrix;
             }
         }
 
+        /// <summary>
+        /// Updates the WorldViewProjection matrix.
+        /// </summary>
         private void UpdateWorldViewProjectionMatrix()
         {
             if ((this.dirtyFlags & EffectDirtyFlags.WorldViewProjectionMatrix) != 0)
             {
-                // Reihenfolge: World, View, Projection.
+                // Calculate the WorldViewProjection matrix.
+                // Order: World, View, Projection.
                 Matrix.Multiply(ref this.worldMatrix, ref this.viewMatrix, out Matrix worldViewMatrix);
                 Matrix.Multiply(ref worldViewMatrix, ref this.projectionMatrix, out this.worldViewProjectionMatrix);
 
-                // Die WorldViewProjection-Matrix ist jetzt frisch berechnet.
+                // The WorldViewProjection matrix is up to date now.
                 this.dirtyFlags ^= EffectDirtyFlags.WorldViewProjectionMatrix;
-
-                // An die Grafikkarte übergeben.
-                this.Parameters["WorldViewProjectionMatrix"].SetValue(this.worldViewProjectionMatrix);
             }
         }
         #endregion
