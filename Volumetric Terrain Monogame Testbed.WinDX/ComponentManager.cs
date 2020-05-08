@@ -41,7 +41,10 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         #region Methods
         internal List<T> GetComponentsByInterface<T>()
         {
-            if (!typeof(T).IsInterface) throw new ArgumentException("Components are differentiated by the interfaces they implement. Please provide an interface.", nameof(T));
+            if (!typeof(T).IsInterface)
+            {
+                throw new ArgumentException("Components are differentiated by the interfaces they implement. Please provide an interface.", nameof(T));
+            }
 
             if (!this.componentsByType.TryGetValue(typeof(T), out IList components))
             {
