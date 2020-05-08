@@ -13,22 +13,42 @@ namespace BattletechUniverse.Effects
     enum EffectDirtyFlags
     {
         None = 0,
-        FullScreenQuad = 1,
-        WorldMatrix = 2,
-        WorldViewProjectionMatrix = 4
+
+        /// <summary>
+        /// Indicates that the world matrix has to be recalculated.
+        /// </summary>
+        WorldMatrix = 1,
+
+        /// <summary>
+        /// Indicates that the world-view-projection matrix has to be recalculated.
+        /// </summary>
+        WorldViewProjectionMatrix = 2
     }
 
-    struct IndexedQuad
+    /// <summary>
+    /// Combines an index with a vertex buffer.
+    /// </summary>
+    struct CombinedBuffers
     {
+        /// <summary>
+        /// The index buffer.
+        /// </summary>
         internal IndexBuffer Indices;
+
+        /// <summary>
+        /// The vertex buffer.
+        /// </summary>
         internal VertexBuffer Vertices;
     }
 
+    /// <summary>
+    /// A monogame effect for volume raycasting.
+    /// </summary>
     class VolumeRaycastingEffect : CustomEffectBase
     {
         #region Members
         private EffectDirtyFlags dirtyFlags;
-        private IndexedQuad fullScreenQuad;
+        private CombinedBuffers fullScreenQuad;
         private Matrix projectionMatrix = Matrix.Identity;
         private bool useRaymarchFullScreen;
         private bool useVertexColor;
@@ -38,14 +58,22 @@ namespace BattletechUniverse.Effects
         #endregion
 
         #region Constructor
+        /// <summary>
+        /// Create a new <see cref="VolumeRaycastingEffect"/> instance.
+        /// </summary>
+        /// <param name="graphicsDevice">The <see cref="GraphicsDevice"/> instance to render this effect.</param>
         internal VolumeRaycastingEffect(GraphicsDevice graphicsDevice) : base(graphicsDevice, typeof(VolumeRaycastingEffect))
         {
-            this.Initialize();
+            this.dirtyFlags = EffectDirtyFlags.WorldMatrix | EffectDirtyFlags.WorldViewProjectionMatrix;
+            this.useRaymarchFullScreen = true;
+            this.useVertexColor = false;
+
+            this.InitializeFullScreenQuad();
         }
         #endregion
 
         #region Properties
-        public IndexedQuad FullScreenQuad => this.fullScreenQuad;
+        public CombinedBuffers FullScreenQuad => this.fullScreenQuad;
 
         public Matrix ProjectionMatrix
         {
@@ -114,28 +142,11 @@ namespace BattletechUniverse.Effects
             this.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, 2);
         }
 
-        private void Initialize()
+        /// <summary>
+        /// Creates the vertices for rendering the full screen quad and set up the corresponding index and vertex buffers.
+        /// </summary>
+        private void InitializeFullScreenQuad()
         {
-            this.dirtyFlags = EffectDirtyFlags.FullScreenQuad | EffectDirtyFlags.WorldMatrix | EffectDirtyFlags.WorldViewProjectionMatrix;
-            this.useRaymarchFullScreen = true;
-            this.useVertexColor = false;
-        }
-
-        protected override void OnApply()
-        {
-            this.UpdateFullScreenQuad();
-            this.UpdateWorldViewProjectionMatrix();
-            base.OnApply();
-        }
-
-        private void UpdateFullScreenQuad()
-        {
-            if ((this.dirtyFlags & EffectDirtyFlags.FullScreenQuad) == EffectDirtyFlags.None)
-            {
-                // Fullscreen quad not marked as dirty. No new calculations required. Jsut exit.
-                return;
-            }
-
             if (this.fullScreenQuad.Indices == null)
             {
                 // Create new index buffer for fullscreen quad.
@@ -173,8 +184,12 @@ namespace BattletechUniverse.Effects
 
             // Fill index buffer with created indices.
             this.fullScreenQuad.Indices.SetData(indexArray);
+        }
 
-            this.dirtyFlags ^= EffectDirtyFlags.FullScreenQuad;
+        protected override void OnApply()
+        {
+            this.UpdateWorldViewProjectionMatrix();
+            base.OnApply();
         }
 
         private void UpdateTechnique()
