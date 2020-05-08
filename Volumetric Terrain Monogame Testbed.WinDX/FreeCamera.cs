@@ -8,6 +8,38 @@ using System.Text;
 namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
 {
     /// <summary>
+    /// Represents a bit field that indicates which properties have to be updated before their next use.
+    /// </summary>
+    [Flags]
+    enum CameraDirtyFlags : uint
+    {
+        /// <summary>
+        /// Indicates that all properties are up to date.
+        /// </summary>
+        None = 0b00000000_00000000_00000000_00000000,
+
+        /// <summary>
+        /// Indicates that the UpdateId has to be incremented.
+        /// </summary>
+        UpdateId = 0b00000000_00000000_00000000_00000001,
+
+        /// <summary>
+        /// Indicates that the projection matrix has to be recalculated.
+        /// </summary>
+        ProjectionMatrix = 0b00000000_00000000_00000000_00000010,
+
+        /// <summary>
+        /// Indicates that the view matrix has to be recalculated.
+        /// </summary>
+        ViewMatrix = 0b00000000_00000000_00000000_00000100,
+
+        /// <summary>
+        /// Indicates that the view frustrum has to be recalculated.
+        /// </summary>
+        ViewFrustrum = 0b00000000_00000000_00000000_00001000
+    }
+
+    /// <summary>
     /// A generic, freely moveable camera.
     /// </summary>
     internal class FreeCamera
@@ -17,6 +49,11 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         /// The aspect ratio (width / height) of the field of view of this camera.
         /// </summary>
         private float aspectRatio;
+
+        /// <summary>
+        /// The bit field that indicates which properties have to be updated on their next use.
+        /// </summary>
+        private CameraDirtyFlags dirtyFlags;
 
         /// <summary>
         /// The direction in world space that is considered "up" by default.
@@ -50,15 +87,14 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         private Matrix projectionMatrix;
 
         /// <summary>
-        /// Indicates if the projection matrix has to be recalculated.
-        /// Used for lazy updates.
-        /// </summary>
-        private bool projectionMatrixDirty;
-
-        /// <summary>
         /// The direction in world space that is considered "right" for the camera's current rotation.
         /// </summary>
         private Vector3 rightDirection;
+
+        /// <summary>
+        /// A value that is incremented with every state changing update.
+        /// </summary>
+        private uint updateId;
 
         /// <summary>
         /// The direction in world space that is considered "up" for the camera's current rotation.
@@ -81,22 +117,10 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         private BoundingFrustum viewFrustrum;
 
         /// <summary>
-        /// Indicates if the view frustrum has to be recalculated.
-        /// Used for lazy updates.
-        /// </summary>
-        private bool viewFrustrumDirty;
-
-        /// <summary>
         /// The view matrix of this camera.
         /// Used to move an object from world space to camera/view space.
         /// </summary>
         private Matrix viewMatrix;
-
-        /// <summary>
-        /// Indicates if the view frustum has to be recalculated.
-        /// Used for lazy updates.
-        /// </summary>
-        private bool viewMatrixDirty;
 
         /// <summary>
         /// Describes the current rotation of this camera.
@@ -139,10 +163,8 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             // Default values.
             this.rotation = Quaternion.Identity;
             this.projectionMatrix = Matrix.Identity;
-            this.projectionMatrixDirty = true;
-            this.viewFrustrumDirty = true;
             this.viewMatrix = Matrix.Identity;
-            this.viewMatrixDirty = true;
+            this.dirtyFlags = CameraDirtyFlags.UpdateId | CameraDirtyFlags.ProjectionMatrix | CameraDirtyFlags.ViewMatrix | CameraDirtyFlags.ViewFrustrum;
 
             // Check and transfer values from call.
             if (aspectRatio < 0.0f)
@@ -224,7 +246,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             get
             {
                 // Lazy update of the projection matrix.
-                if (this.projectionMatrixDirty)
+                if ((this.dirtyFlags & CameraDirtyFlags.ProjectionMatrix) != 0)
                 {
                     this.UpdateProjectionMatrix();
                 }
@@ -244,7 +266,7 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             get
             {
                 // Lazy update of the view frustrum.
-                if (this.viewFrustrumDirty)
+                if ((this.dirtyFlags & CameraDirtyFlags.ViewFrustrum) != 0)
                 {
                     this.UpdateViewFrustrum();
                 }
@@ -257,14 +279,14 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         /// Gets the view matrix used by this camera.
         /// </summary>
         /// <remarks>
-        /// Used to move an object from world to camera/vuew space.
+        /// Used to move an object from world to camera/view space.
         /// </remarks>
         public Matrix ViewMatrix
         {
             get
             {
                 // Lazy update of the view matrix.
-                if (this.viewMatrixDirty)
+                if ((this.dirtyFlags & CameraDirtyFlags.ViewMatrix) != 0)
                 {
                     this.UpdateViewMatrix();
                 }
@@ -283,9 +305,9 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             // Monogame expects the vertical FOV to be specified as half aperture angle in radians.
             float verticalFovMonogame = MathHelper.ToRadians(this.verticalFieldOfViewDegree / 2.0f);
 
-            Matrix newProjectionMatrix = Matrix.CreatePerspectiveFieldOfView(verticalFovMonogame, this.aspectRatio, this.nearClippingPlaneDistance, this.farClippingPlaneDistance);
-            this.projectionMatrixDirty = false;
-            this.projectionMatrix = newProjectionMatrix;
+            this.projectionMatrix = Matrix.CreatePerspectiveFieldOfView(verticalFovMonogame, this.aspectRatio, this.nearClippingPlaneDistance, this.farClippingPlaneDistance);
+            this.dirtyFlags ^= CameraDirtyFlags.ProjectionMatrix;
+            this.dirtyFlags |= CameraDirtyFlags.UpdateId;
         }
 
         /// <summary>
@@ -293,8 +315,9 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
         /// </summary>
         private void UpdateViewFrustrum()
         {
-            this.viewFrustrumDirty = false;
             this.viewFrustrum = new BoundingFrustum(this.ViewMatrix * this.ProjectionMatrix);
+            this.dirtyFlags ^= CameraDirtyFlags.ViewFrustrum;
+            this.dirtyFlags |= CameraDirtyFlags.UpdateId;
         }
 
         private void UpdateViewMatrix()
@@ -302,8 +325,9 @@ namespace SolConsulting.MonoGame.Testbed.VolumetricTerrain
             Vector3 lookAtTarget = this.position + this.viewDirection;
             Matrix newViewMatrix = Matrix.CreateLookAt(this.position, lookAtTarget, this.upDirection);
 
-            this.viewMatrixDirty = false;
             this.viewMatrix = newViewMatrix;
+            this.dirtyFlags ^= CameraDirtyFlags.ViewMatrix;
+            this.dirtyFlags |= CameraDirtyFlags.UpdateId;
         }
         #endregion
     }
