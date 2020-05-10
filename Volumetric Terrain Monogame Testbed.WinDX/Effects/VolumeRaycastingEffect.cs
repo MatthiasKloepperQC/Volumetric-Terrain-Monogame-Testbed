@@ -233,7 +233,7 @@ namespace BattletechUniverse.Effects
         protected override void OnApply()
         {
             // Transfer uniform values to graphics device.
-            this.Parameters["CameraPositionWorldSpace"].SetValue(this.CameraPositionWorldSpace);
+            this.Parameters["CameraPositionWorldSpace"].SetValue(new Vector4(this.CameraPositionWorldSpace, 1.0f));
             this.Parameters["InverseViewProjectionMatrix"].SetValue(this.InverseViewProjectionMatrix);
             //this.Parameters["WorldViewProjectionMatrix"].SetValue(this.WorldViewProjectionMatrix);
             base.OnApply();
